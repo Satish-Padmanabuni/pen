@@ -1,0 +1,244 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2708
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fswiss\fcharset0 Helvetica-Bold;}
+{\colortbl;\red255\green255\blue255;\red155\green0\blue211;}
+{\*\expandedcolortbl;;\csgenericrgb\c60784\c0\c82745;}
+\vieww12000\viewh15160\viewkind0
+\deftab720
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f0\fs32 \cf0  Installing the prerequisites\
+
+\fs22 Nagios requires the gcc compiler and build-essentials for the compilation, LAMP (Apache, PHP, MySQL) for the Nagios web interface and Sendmail to send alerts from the server. To install all those packages, run this command (it's just 1 line):\
+
+\f1\b\fs24 sudo apt-get install wget build-essential apache2 php apache2-mod-php7.0 php-gd libgd-dev sendmail unzip -y\
+
+\f0\b0\fs22 User and group configuration\
+For Nagios to run, you have to create a new user for Nagios. We will name the user "nagios" and additionally create a group named "nagcmd". We add the new user to the group as shown below:\
+
+\f1\b\fs24 useradd nagios\
+groupadd nagcmd\
+usermod -a -G nagcmd nagios\
+usermod -a -G nagios,nagcmd www-data\
+\pard\pardeftab720\sa200\partightenfactor0
+
+\f0\b0\fs28 \cf0 \
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+\cf0 \
+Adding the Nagios user\
+Installing Nagios\
+Step 1 - Download and extract the Nagios core\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f1\b\fs24 \cf0 cd ~\
+wget {\field{\*\fldinst{HYPERLINK "https://assets.nagios.com/downloads/nagioscore/releases/nagios-4.2.0.tar.gz"}}{\fldrslt https://assets.nagios.com/downloads/nagioscore/releases/nagios-4.2.0.tar.gz}}\
+tar -xzf nagios*.tar.gz\
+cd nagios-4.2.0\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f0\b0\fs28 \cf0 Step 2 - Compile Nagios\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\fs22 \cf0 Before you build Nagios, you will have to configure it with the user and the group you have created earlier.\
+
+\f1\b\fs24 ./configure --with-nagios-group=nagios --with-command-group=nagcmd\
+
+\f0\b0\fs22 For more information please use: ./configure --help .\
+Now to install Nagios:\
+
+\f1\b\fs24 make all\
+sudo make install\
+sudo make install-commandmode\
+sudo make install-init\
+sudo make install-config\
+/usr/bin/install -c -m 644 sample-config/httpd.conf /etc/apache2/sites-available/nagios.conf\
+
+\f0\b0\fs22 And copy evenhandler directory to the nagios directory:\
+
+\f1\b\fs24 cp -R contrib/eventhandlers/ /usr/local/nagios/libexec/\
+chown -R nagios:nagios /usr/local/nagios/libexec/eventhandlers\
+\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f0\b0\fs28 \cf0 Step 3 - Install the Nagios Plugins\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\fs22 \cf0 Download and extract the Nagios plugins:\
+
+\f1\b\fs24 cd ~\
+wget {\field{\*\fldinst{HYPERLINK "https://nagios-plugins.org/download/nagios-plugins-2.1.2.tar.gz"}}{\fldrslt https://nagios-plugins.org/download/nagios-plugins-2.1.2.tar.gz}}\
+tar -xzf nagios-plugins*.tar.gz\
+cd nagios-plugin-2.1.2/\
+
+\f0\b0\fs22 Install the Nagios plugin's with the commands below:\
+
+\f1\b\fs24 ./configure --with-nagios-user=nagios --with-nagios-group=nagios --with-openssl\
+make\
+make install\
+\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f0\b0\fs28 \cf0 Step 4 - Configure Nagios\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\fs22 \cf0 After the installation phase is complete, you can find the default configuration of Nagios in /usr/local/nagios/.\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\fs28 \cf0 We will configure Nagios and Nagios contact.\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\fs22 \cf0 Edit default nagios configuration with vim:\
+\
+
+\f1\b\fs24 vi /usr/local/nagios/etc/nagios.cfg\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f0\b0 \cf0 uncomment line 51 for the host monitor configuration.\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\fs22 \cf0 \
+
+\f1\b\fs24 cfg_dir=/usr/local/nagios/etc/servers\
+
+\f0\b0\fs22 Save and exit.\
+Add a new folder named servers:\
+
+\f1\b\fs24 mkdir -p /usr/local/nagios/etc/servers\
+
+\f0\b0\fs22 The Nagios contact can be configured in the contact.cfg file. To open it use:\
+
+\f1\b\fs24 vi /usr/local/nagios/etc/objects/contacts.cfg\
+
+\f0\b0\fs22 Then replace the default email with your own email.\
+\pard\pardeftab720\sa200\partightenfactor0
+\cf0 \
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+\cf0 \
+Set email address.\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\fs28 \cf0 Configuring Apache\
+Step 1 - enable Apache modules\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f1\b\fs24 \cf0 sudo a2enmod rewrite\
+sudo a2enmod cgi\
+
+\f0\b0\fs22 You can use the htpasswd command to configure a user nagiosadmin for the nagios web interface\
+
+\f1\b\fs24 sudo htpasswd -c /usr/local/nagios/etc/htpasswd.users nagiosadmin\
+
+\f0\b0\fs22 and type your password.\
+\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\fs28 \cf0 Step 2 - enable the Nagios virtualhost\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f1\b\fs24 \cf0 sudo ln -s /etc/apache2/sites-available/nagios.conf /etc/apache2/sites-enabled/\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f0\b0\fs28 \cf0 Step 3 - Start Apache and Nagios\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f1\b\fs24 \cf0 service apache2 restart\
+service nagios start\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f0\b0\fs28 \cf0 When Nagios starts, you may see the following error :\
+
+\fs24 Starting nagios (via systemctl): nagios.serviceFailed\
+
+\fs28 And this is how to fix it:\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f1\b\fs24 \cf0 cd /etc/init.d/\
+cp /etc/init.d/skeleton /etc/init.d/nagios\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f0\b0\fs28 \cf0 Now edit the Nagios file:\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f1\b\fs24 \cf0 vi /etc/init.d/nagios\
+
+\f0\b0\fs22 ... and add the following code:\
+\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f1\b \cf2 DESC="Nagios"\
+NAME=nagios\
+DAEMON=/usr/local/nagios/bin/$NAME\
+DAEMON_ARGS="-d /usr/local/nagios/etc/nagios.cfg"\
+PIDFILE=/usr/local/nagios/var/$NAME.lock\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f0\b0 \cf0 Make it executable and start Nagios:\
+
+\f1\b\fs24 chmod +x /etc/init.d/nagios\
+service apache2 restart\
+service nagios start\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f0\b0\fs28 \cf0 If you are getting this error while installing Nagios Core on RaspberryPi run these commands to resolve the error and get Nagios up and running in no time. These commands wil need to be run as ROOT. You need to restart the nagios service after you carry out the changes.\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f1\b\fs24 \cf0 \
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f0\b0\fs28 \cf0  Create this nagios.service file\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f1\b \cf0  vi /etc/systemd/system/nagios.service\
+
+\fs24 \cf2 [Unit]\
+Description=Nagios\
+BindTo=network.target\
+[Install]\
+WantedBy=multi-user.target\
+[Service]\
+User=nagios\
+Group=nagios\
+Type=simple\
+ExecStart=/usr/local/nagios/bin/nagios /usr/local/nagios/etc/nagios.cfg\
+
+\fs28 \cf0 # systemctl enable /etc/systemd/system/nagios.service\
+# systemctl start nagios\
+# systemctl status nagios\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f0\b0\fs24 \cf0 After that you need to restart the Nagios Service.\
+\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f1\b\fs28 \cf0 # /etc/init.d/nagios restart\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f0\b0\fs24 \cf0 That's it you should now be able to access Nagios WEBUI.\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f1\b \cf2 \
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\f0\b0\fs32 \cf0 Testing the Nagios Server\
+
+\fs22 Please open your browser and access the Nagios server ip, in my case: {\field{\*\fldinst{HYPERLINK "http://192.168.1.9/nagios"}}{\fldrslt 
+\fs28 http://192.168.1.9/nagios}}
+\fs28 .\
+
+\fs22 \
+Nagios Login with apache htpasswd.\
+\pard\pardeftab720\sa200\partightenfactor0
+\cf0 \
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+\cf0 \
+Nagios Login\
+\
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+
+\fs28 \cf0 Nagios Admin Dashboard\
+\pard\pardeftab720\sa200\partightenfactor0
+
+\fs22 \cf0 \
+\pard\pardeftab720\sl276\slmult1\sa200\partightenfactor0
+\cf0 \
+Nagios Dashboard\
+}
